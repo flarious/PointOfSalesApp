@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Point of sales</title>
+</head>
+<body>
+    <a href="/PointOfSales">กลับ</a>
+    <h1>ตั้งค่าหน่วยนับ</h1>
+    <button id="add_unit">เพิ่ม</button>
+    <div id="add_form">
+
+    </div>
+    <table id="unit_table">
+        <thead>
+            <tr>
+                <th>No.</th>
+                <th>ชื่อ</th>
+                <th>ดำเนินการ</th>
+            </tr>
+        </thead>
+        <tbody>
+
+        </tbody>
+    </table>
+    <div id="edit_form">
+    </div>
+
+    <script type="module">
+        import {
+            getUnitsList,
+            addUnit,
+            editUnit,
+            deleteUnit
+        } from '../api.js'
+
+        const table = document.getElementById("unit_table")
+        const addButton = document.getElementById("add_unit")
+        const addForm = document.getElementById("add_form")
+        const editForm = document.getElementById("edit_form")
+
+        async function openAddForm() {
+            addForm.innerHTML = '<h1>เพิ่มหน่วยนับ</h1>' + 
+            '<label for="new_unit">ชื่อหน่วย</label>' + 
+            '<input name="new_unit" id="new_unit"><br>' +
+            '<button id="close_add">close</button><button id="save_add">save changes</button>'
+
+            const saveAdd = document.getElementById("save_add")
+            const closeAdd = document.getElementById("close_add")
+
+            saveAdd.addEventListener("click", addItem)
+            closeAdd.addEventListener("click", closeAddForm)
+        }
+
+        async function closeAddForm() {
+            addForm.innerHTML = ''
+        }
+
+        async function openEditForm() {
+            const index = getClickedButtonRowIndex(event.currentTarget)
+            const valToEdit = document.getElementById(`unit${index}`).innerText
+            editForm.innerHTML = '<h1>แก้ไขหน่วยนับ</h1>' + 
+            '<label for="edit_unit">ชื่อหน่วย</label>' + 
+            `<input name="edit_unit" id="edit_unit" value="${valToEdit}"><br>` +
+            '<button id="close_edit">close</button><button id="save_edit">save changes</button>'
+
+            const saveEdit = document.getElementById("save_edit")
+            const closeEdit = document.getElementById("close_edit")
+
+            saveEdit.addEventListener("click", editItem)
+            saveEdit.target = event.currentTarget
+
+            closeEdit.addEventListener("click", closeEditForm)
+        }
+
+        async function closeEditForm() {
+            editForm.innerHTML = ''
+        }
+
+        async function addItem() {
+            const newUnit = document.getElementById("new_unit").value
+            if (newUnit != null) {
+                const items = await getUnitsList()
+                if (!isInUnits(items, newUnit)) {
+                    await addUnit(newUnit)
+
+                    clearTable()
+                    getTable()
+
+                    closeAddForm()
+                }
+                else {
+                    alert("Error: Unit duplicated.")
+                }
+                
+            }
+        }
+
+        async function getTable() {
+            const items = await getUnitsList()
+            for (const item of items) {
+                const newRow = document.createElement('tr')
+                const index = table.rows.length
+                newRow.innerHTML = '<td>' + index + '</td>' + 
+                    `<td id="unit${index}">` + item.name + '</td>' +
+                    '<td>' 
+                        `<input type="hidden" value="${item.id}">` + 
+                        `<button id="edit_unit${index}">แก้ไข</button>` + 
+                        `<button id="delete_unit${index}">ลบ</button>` + 
+                    '<td>'
+
+                table.querySelector("tbody").appendChild(newRow)
+
+                const newEditButton = document.getElementById(`edit_unit${index}`)
+                const newDeleteButton = document.getElementById(`delete_unit${index}`)
+
+                newEditButton.addEventListener("click", openEditForm)
+                newDeleteButton.addEventListener("click", deleteItem)
+            }
+        }
+
+        async function clearTable() {
+            var rowLength = table.rows.length
+            for (var i = rowLength - 1; i > 0; i--) {
+                table.deleteRow(i)
+            }
+                
+        }
+
+        async function editItem() {
+            const clickedForm = event.currentTarget.target
+            const editValue = document.getElementById("edit_unit").value
+            if (editValue != null) {
+                const items = await getUnitsList()
+                const index = getClickedButtonRowIndex(clickedForm)
+                const itemId = getItemId(index)
+                if (!isInUnits(items, editValue) || (isInUnits(items, editValue) && editValue == items.find(item => item.id == itemId).name)) {
+                    await editUnit(itemId, editValue)
+
+                    clearTable()
+                    getTable()
+
+                    closeEditForm()
+                }
+                else {
+                    alert("Error: Unit duplicated.")
+                }
+                
+            }
+        }
+
+        async function deleteItem() {
+            const index = getClickedButtonRowIndex(event.currentTarget)
+            const itemId = getItemId(index)
+            await deleteUnit(itemId)
+
+            clearTable()
+            getTable()
+        }
+
+        function getClickedButtonRowIndex(element) {
+            return element.closest('tr').rowIndex
+        }
+
+        function getItemId(rowIndex) {
+            return table.querySelector("tbody").querySelector(`tr:nth-child(${rowIndex})`).querySelector("td:nth-child(3)").querySelector("input").value
+        }
+
+        function isInUnits(list, item) {
+            for (const unit of list) {
+                if (unit.name == item) {
+                    return true
+                }
+            }
+
+            return false
+        }
+
+        addButton.addEventListener("click", openAddForm)
+        table.addEventListener("load", getTable())  
+
+    </script>
+</body>
+</html>

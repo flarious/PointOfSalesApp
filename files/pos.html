@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Point of sales</title>
+</head>
+<body>
+    <a href="/PointOfSales">กลับ</a>
+    <h1>ออกใบเสร็จรับเงิน</h1>
+    <label>เลขที่เอกสาร</label>
+    <input>
+    <label>วันที่</label>
+    <input>
+    <table id="receipt_table">
+        <tr>
+            <th>No.</th>
+            <th>รหัสสินค้า</th>
+            <th>ชื่อสินค้า</th>
+            <th>หน่วย</th>
+            <th>จำนวน</th>
+            <th>ราคา</th>
+            <th>ส่วนลด (%)</th>
+            <th>ส่วนลด (บาท)</th>
+            <th>รวมเงิน</th>
+            <th>ดำเนินการ</th>
+        </tr>
+    </table>
+    <label>ยอดรวมสินค้าก่อนส่วนลด</label>
+    <input><br>
+    <label>ยอดรวมส่วนลดสินค้า</label>
+    <input><br>
+    <label>Subtotal</label>
+    <input><br>
+    <label>ส่วนลดการค้า</label>
+    <input><br>
+    <label>Grand total</label>
+    <input><br>
+    <button id="save_order">บันทึก</button>
+</body>
+</html>
