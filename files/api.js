@@ -22,3 +22,19 @@ export async function editUnit(id, editValue) {
 export async function deleteUnit(id) {
     return await axios.delete(`${endpointUnit}/delete?id=${id}`).then(response => response.data)
 }
+
+export async function getItemsList() {
+    return await axios.get(`${endpointItem}/findAll`).then(response => response.data)
+}
+
+export async function addItem(newItem) {
+    return await axios.post(`${endpointItem}/create`, newItem).then(response => response.data)
+}   
+
+export async function editItem(id, edittedItem) {
+    return await axios.put(`${endpointItem}/update?id=${id}`, edittedItem).then(response => response.data);
+}
+
+export async function deleteItem(id) {
+    return await axios.delete(`${endpointItem}/delete?id=${id}`).then(response => response.data)
+}
