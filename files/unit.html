@@ -10,7 +10,14 @@
 <body>
     <a href="/PointOfSales">กลับ</a>
     <h1>ตั้งค่าหน่วยนับ</h1>
-    <button id="add_unit">เพิ่ม</button>
+    <button id="add">เพิ่ม</button>
+    <div id="form" class="hide">
+        <h1></h1>
+        <label for="form_unit">ชื่อหน่วย</label>
+        <input name="form_unit" id="form_unit"><br>
+        <button id="close">close</button><br>
+        <button id="save">save changes</button>
+    </div>
     <table id="unit_table">
         <thead>
             <tr>
@@ -24,22 +31,13 @@
         </tbody>
     </table>
     <template id="unit_row">
-        <tr>
-            <td class="no"></td>
-            <td class="unit"></td>
-            <td>
-                <button class="edit_unit">แก้ไข</button>
-                <button class="delete_unit">ลบ</button>
-            <td>
-        </tr>      
+        <td class="no"></td>
+        <td class="unit"></td>
+        <td>
+            <button class="edit">แก้ไข</button>
+            <button class="delete">ลบ</button>
+        </td>      
     </template>
-    <div id="form" class="hide">
-        <h1></h1>
-        <label for="form_input">ชื่อหน่วย</label>
-        <input name="form_input" id="form_input"><br>
-        <button id="close">close</button><br>
-        <button id="save">save changes</button>
-    </div>
 
     <script type="module">
         import {
@@ -50,67 +48,76 @@
         } from '../api.js'
 
         async function getTable() { 
-            const items = await getUnitsList()
-
-            const table = document.getElementById("unit_table")
-            const form = document.getElementById("form")
-            const addButton = document.getElementById("add_unit")
-            const closeFormButton = document.getElementById("close")
+            const table = document.querySelector("#unit_table")
+            const form = document.querySelector("#form")
+            const addButton = document.querySelector("#add")
 
             addButton.addEventListener("click", openAddForm)
-            closeFormButton.addEventListener("click", closeForm)
+
+            const response = await getUnitsList()
+
+            if (response.code != 0) {
+                alert(response.message)
+                return
+            }
+
+            const items = response.data
 
             for (const item of items) {
-                const newRow = document.createElement('tr')
-                const index = table.rows.length
+                var newRow = document.createElement('tr')
                 var template = document.querySelector('#unit_row')
+                const index = table.rows.length
 
                 var clone = template.content.cloneNode(true)
                 clone.querySelector(".no").innerText = index
                 clone.querySelector(".unit").innerText = item.name
-                clone.querySelector(".edit_unit").addEventListener("click", openEditForm)
-                clone.querySelector(".delete_unit").addEventListener("click", deleteItem)
+                clone.querySelector(".edit").addEventListener("click", openEditForm)
+                clone.querySelector(".delete").addEventListener("click", deleteData)
 
-                table.querySelector("tbody").appendChild(clone)
+                newRow.append(clone)
+                table.querySelector("tbody").appendChild(newRow)
 
-                
                 function openEditForm() {
                     form.dataset.for = "Edit"
                     form.classList.remove("hide")
                     form.querySelector("h1").innerText = "แก้ไขหน่วยนับ"
-                    form.querySelector("input").value = item.name
+                    form.querySelector("#form_unit").value = item.name
                     form.querySelector("#save").addEventListener("click", saveEditForm)
-                    document.body.querySelectorAll("*:not(#form, #form *)").forEach(
-                        elem => elem.style.pointerEvents = ""
-                    )
+                    form.querySelector("#close").addEventListener("click", closeEditForm)
+                    focusForm()
+                }
+
+                function closeEditForm() {
+                    form.classList.add("hide")
+                    form.querySelector("#save").removeEventListener("click", saveEditForm)
+                    form.querySelector("#close").removeEventListener("click", closeEditForm)
+                    unfocusForm()
                 }
                 
                 function saveEditForm() {
                     if (form.dataset.for == "Edit") {
-                        editItem()
+                        editData()
                     }
                 }
 
-                async function editItem() {
-                    const editValue = form.querySelector("input").value
+                async function editData() {
+                    const editValue = form.querySelector("#form_unit").value
                     if (editValue != null) {
-                        if (!isInUnits(items, editValue) || (isInUnits(items, editValue) && editValue == items.find(item2 => item2.id == item.id).name)) {
-                            await editUnit(item.id, editValue)
+                        const response = await editUnit(item.id, editValue)
 
-                            clearTable()
-                            getTable()
+                        if (response.code != 0) {
+                            alert(response.message + response.data)
+                            return
+                        }
 
-                            form.querySelector("#save").removeEventListener("click", saveEditForm)
-                            closeForm()
-                        }
-                        else {
-                            alert("Error: Unit duplicated.")
-                        }
-                        
+                        clearTable()
+                        getTable()
+
+                        closeEditForm()
                     }
                 }
 
-                async function deleteItem(event) {
+                async function deleteData() {
                     await deleteUnit(item.id)
 
                     clearTable()
@@ -122,43 +129,64 @@
                 form.dataset.for = "Add"
                 form.classList.remove("hide")
                 form.querySelector("h1").innerText = "เพิ่มหน่วยนับ"
-                form.querySelector("input").value = ""
+                form.querySelector("#form_unit").value = ""
                 form.querySelector("#save").addEventListener("click", saveAddForm)
-                document.body.querySelectorAll("*:not(#form, #form *)").forEach(
-                    elem => elem.style.pointerEvents = "none"
-                )
+                form.querySelector("#close").addEventListener("click", closeAddForm)
+                focusForm()
             }
 
-            function closeForm() {
+            function closeAddForm() {
                 form.classList.add("hide")
-                document.body.querySelectorAll("*:not(#form, #form *)").forEach(
-                    elem => elem.style.pointerEvents = ""
-                )
+                form.querySelector("#save").removeEventListener("click", saveAddForm)
+                form.querySelector("#close").removeEventListener("click", closeAddForm)
+                unfocusForm()
             }
 
             function saveAddForm() {
                 if (form.dataset.for == "Add") {
-                    addItem()
+                    addData()
                 }
             }
 
-            async function addItem() {
-                const newUnit = form.querySelector("input").value
+            async function addData() {
+                const newUnit = form.querySelector("#form_unit").value
                 if (newUnit != null) {
-                    if (!isInUnits(items, newUnit)) {
-                        await addUnit(newUnit)
+                    const response = await addUnit(newUnit)
 
-                        clearTable()
-                        getTable()
+                    if (response.code != 0) {
+                        alert(response.message + response.data)
+                        return
+                    }
 
-                        form.querySelector("#save").removeEventListener("click", saveAddForm)
-                        closeForm()
-                    }
-                    else {
-                        alert("Error: Unit duplicated.")
-                    }
-                    
+                    clearTable()
+                    getTable()
+
+                    form.querySelector("#save").removeEventListener("click", saveAddForm)
+                    closeAddForm()                    
                 }
+            }
+
+            function focusForm() {
+                document.body.style.backgroundColor = "lightgray"
+                document.body.querySelectorAll("#form, #form *").forEach(
+                    elem => elem.style.backgroundColor = "white"
+                )
+                document.body.querySelectorAll("*:not(#form, #form *)").forEach(
+                    elem => { 
+                        elem.style.pointerEvents = "none" 
+                        elem.style.opacity = 0.5
+                    }
+                )
+            }
+
+            function unfocusForm() {
+                document.body.style.backgroundColor = "white"
+                document.body.querySelectorAll("*:not(#form, #form *)").forEach(
+                    elem => { 
+                        elem.style.pointerEvents = "" 
+                        elem.style.opacity = 1
+                    }
+                )
             }
 
             function clearTable() {
@@ -168,17 +196,6 @@
                 }
 
                 addButton.removeEventListener("click", openAddForm)
-                closeFormButton.removeEventListener("click", closeForm)
-            }
-
-            function isInUnits(list, item) {
-                for (const unit of list) {
-                    if (unit.name == item) {
-                        return true
-                    }
-                }
-
-                return false
             }
         }
       

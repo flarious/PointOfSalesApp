@@ -5,11 +5,30 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Point of sales</title>
+    <link rel="stylesheet" href="../hide.css">
 </head>
 <body>
     <a href="/PointOfSales">กลับ</a>
     <h1>ตั้งค่าสินค้า</h1>
-    <button id="add_item">เพิ่ม</button>
+    <button id="add">เพิ่ม</button>
+    <div id="form" class="hide">
+        <h1></h1>
+        <label for="form_code">รหัสสินค้า</label>
+        <input name="form_code" id="form_code"><br>
+        <label for="form_name">ชื่อสินค้า</label>
+        <input name="form_name" id="form_name"><br>
+        <label for="form_price">ราคา</label>
+        <input type="number" name="form_price" id="form_price"><br>
+        <label for="form_unit">หน่วย</label>
+        <select name="form_unit" id="form_unit">
+            <option hidden disabled selected value></option>
+        </select><br>
+        <button id="close">close</button><br>
+        <button id="save">save changes</button>
+    </div>
+    <template id="item_unit">
+        <option class="option"></option>
+    </template>
     <table id="item_table">
         <tr>
             <th>No.</th>
@@ -20,5 +39,237 @@
             <th>ดำเนินการ</th>
         </tr>
     </table>
+    <template id="item_row">
+        <td class="no"></td>
+        <td class="code"></td>
+        <td class="name"></td>
+        <td class="unit"></td>
+        <td class="price"></td>
+        <td>
+            <button class="edit">แก้ไข</button>
+            <button class="delete">ลบ</button>
+        </td>     
+    </template>
+
+    <script type="module">
+        import {
+            getUnitsList,
+            getItemsList,
+            addItem,
+            editItem,
+            deleteItem,
+        } from '../api.js'
+
+        async function getTable() {
+            const table = document.querySelector("#item_table")
+            const form = document.querySelector("#form")
+            const addButton = document.querySelector("#add")
+
+            addButton.addEventListener("click", openAddForm)
+
+            const response = await getItemsList()
+
+            if (response.code != 0) {
+                alert(response.message)
+                return
+            }
+
+            const items = response.data
+
+            for (const item of items) {
+                var newRow = document.createElement('tr')
+                var template = document.querySelector('#item_row')
+                const index = table.rows.length
+
+                var clone = template.content.cloneNode(true)
+                clone.querySelector(".no").innerText = index
+                clone.querySelector(".code").innerText = item.code
+                clone.querySelector(".name").innerText = item.name
+                clone.querySelector(".unit").innerText = item.unit
+                clone.querySelector(".price").innerText = item.price
+                clone.querySelector(".edit").addEventListener("click", openEditForm)
+                clone.querySelector(".delete").addEventListener("click", deleteData)
+
+                newRow.append(clone)
+                table.querySelector("tbody").appendChild(newRow)
+
+                async function openEditForm() {
+                    form.dataset.for = "Edit"
+                    form.classList.remove("hide")
+                    form.querySelector("h1").innerText = "แก้ไขสินค้า"
+                    form.querySelector("#form_code").value = item.code
+                    form.querySelector("#form_code").disabled = true
+                    form.querySelector("#form_name").value = item.name
+                    form.querySelector("#form_price").value = item.price
+
+                    const response = await getUnitsList()
+
+                    if (response.code != 0) {
+                        alert(response.message)
+                        return
+                    }
+
+                    const units = response.data
+
+                    for (const unit of units) {
+                        var optionTemplate = document.querySelector("#item_unit")
+                        var option = optionTemplate.content.cloneNode(true)
+                        option.querySelector("option").value = unit.id
+                        option.querySelector("option").text = unit.name
+
+                        form.querySelector("#form_unit").appendChild(option)
+                    }
+
+                    form.querySelector("#form_unit").value = units.find(unit => unit.name == item.unit).id
+
+                    form.querySelector("#save").addEventListener("click", saveEditForm)
+                    form.querySelector("#close").addEventListener("click", closeEditForm)
+                    focusForm()
+                }
+
+                function closeEditForm() {
+                    form.classList.add("hide")
+                    form.querySelector("#save").removeEventListener("click", saveEditForm)
+                    form.querySelector("#close").removeEventListener("click", closeEditForm)
+                    unfocusForm()
+                }
+
+                function saveEditForm() {
+                    if (form.dataset.for == "Edit") {
+                        editData()
+                    }
+                }
+
+                async function editData() {
+                    const editName = form.querySelector("#form_name").value
+                    const editPrice = form.querySelector("#form_price").value
+                    const editUnit = form.querySelector("#form_unit").value
+                    const editValue = { name: editName, price: editPrice, unit: editUnit }
+                    if (editValue != null) {
+                        const response = await editItem(item.id, editValue)
+
+                        if (response.code != 0) {
+                            alert(response.message + response.data)
+                            return
+                        }
+
+                        clearTable()
+                        getTable()
+
+                        closeEditForm()
+                    }
+                }
+
+                async function deleteData() {
+                    await deleteItem(item.id)
+
+                    clearTable()
+                    getTable()
+                }
+            }
+
+            async function openAddForm() {
+                form.dataset.for = "Add"
+                form.classList.remove("hide")
+                form.querySelector("h1").innerText = "เพิ่มสินค้า"
+                form.querySelector("#form_code").value = ""
+                form.querySelector("#form_code").disabled = false
+                form.querySelector("#form_name").value = ""
+                form.querySelector("#form_price").value = ""
+                form.querySelector("#form_unit").value = ""
+
+                const response = await getUnitsList()
+
+                if (response.code != 0) {
+                    alert(response.message)
+                    return
+                }
+
+                const units = response.data
+                
+                for (const unit of units) {
+                    var optionTemplate = document.querySelector("#item_unit")
+                    var option = optionTemplate.content.cloneNode(true)
+                    option.querySelector("option").value = unit.id
+                    option.querySelector("option").text = unit.name
+
+                    form.querySelector("#form_unit").appendChild(option)
+                }
+
+                form.querySelector("#save").addEventListener("click", saveAddForm)
+                form.querySelector("#close").addEventListener("click", closeAddForm)
+                focusForm()
+            }
+
+            function closeAddForm() {
+                form.classList.add("hide")
+                form.querySelector("#save").removeEventListener("click", saveAddForm)
+                form.querySelector("#close").removeEventListener("click", closeAddForm)
+                unfocusForm()
+            }
+
+            function saveAddForm() {
+                if (form.dataset.for == "Add") {
+                    addData()
+                }
+            }
+
+            async function addData() {
+                const newCode = form.querySelector("#form_code").value
+                const newName = form.querySelector("#form_name").value
+                const newPrice = +form.querySelector("#form_price").value
+                const newUnit = +form.querySelector("#form_unit").value
+                const newItem = { code: newCode, name: newName, price: newPrice, unit: newUnit }
+                if (newItem != null) {
+                    const response = await addItem(newItem)
+
+                    if (response.code != 0) {
+                        alert(response.message + response.data)
+                        return
+                    }
+
+                    clearTable()
+                    getTable()
+
+                    form.querySelector("#save").removeEventListener("click", saveAddForm)
+                    closeAddForm()
+                }
+            }
+
+            function focusForm() {
+                document.body.style.backgroundColor = "lightgray"
+                document.body.querySelectorAll("#form, #form *").forEach(
+                    elem => elem.style.backgroundColor = "white"
+                )
+                document.body.querySelectorAll("*:not(#form, #form *)").forEach(
+                    elem => { 
+                        elem.style.pointerEvents = "none" 
+                        elem.style.opacity = 0.5
+                    }
+                )
+            }
+
+            function unfocusForm() {
+                document.body.style.backgroundColor = "white"
+                document.body.querySelectorAll("*:not(#form, #form *)").forEach(
+                    elem => { 
+                        elem.style.pointerEvents = "" 
+                        elem.style.opacity = 1
+                    }
+                )
+            }
+
+            function clearTable() {
+                var rowLength = table.rows.length
+                for (var i = rowLength - 1; i > 0; i--) {
+                    table.deleteRow(i)
+                }
+
+                addButton.removeEventListener("click", openAddForm)
+            }
+        }
+
+        getTable()
+    </script>
 </body>
 </html>
