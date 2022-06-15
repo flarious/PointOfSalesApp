@@ -219,7 +219,7 @@
                 const newName = form.querySelector("#form_name").value
                 const newPrice = +form.querySelector("#form_price").value
                 const newUnit = +form.querySelector("#form_unit").value
-                const newItem = { code: newCode, name: newName, price: newPrice, unit: newUnit }
+                const newItem = { code: newCode, name: newName, price: newPrice, unitId: newUnit }
                 if (newItem != null) {
                     const response = await addItem(newItem)
 
