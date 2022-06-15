@@ -38,3 +38,7 @@ export async function editItem(id, edittedItem) {
 export async function deleteItem(id) {
     return await axios.delete(`${endpointItem}/delete?id=${id}`).then(response => response.data)
 }
+
+export async function addReceipt(newReceipt) {
+    return await axios.post(`${endpointReceipt}/create`, newReceipt).then(response => response.data)
+}
