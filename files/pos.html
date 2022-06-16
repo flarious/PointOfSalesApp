@@ -277,9 +277,8 @@
                 if (row.querySelector(".select_code").innerText != "เลือกสินค้า") {
                     const price = +row.querySelector('.item_price').innerText
                     const amount = +row.querySelector('.item_amount').value
-                    const discount = (100 - +row.querySelector('.discount_percent').value) / 100
 
-                    const total = price * amount * discount
+                    const total = price * amount
 
                     sum += total
                 }

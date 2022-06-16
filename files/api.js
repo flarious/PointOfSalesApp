@@ -39,6 +39,14 @@ export async function deleteItem(id) {
     return await axios.delete(`${endpointItem}/delete?id=${id}`).then(response => response.data)
 }
 
+export async function getReceiptsList() {
+    return await axios.get(`${endpointReceipt}/findAll`).then(response => response.data)
+}
+
+export async function getOneReceipt(id) {
+    return await axios.get(`${endpointReceipt}/findOne?id=${id}`).then(response => response.data)
+}
+
 export async function addReceipt(newReceipt) {
     return await axios.post(`${endpointReceipt}/create`, newReceipt).then(response => response.data)
 }

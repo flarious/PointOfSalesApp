@@ -13,7 +13,7 @@
     <input type="date" name="start_date" id="start_date">
     <label for="end_date">วันที่สิ้นสุด :</label>
     <input type="date" name="end_date" id="end_date">
-    <button>ค้นหา</button>
+    <button id="search_by_date">ค้นหา</button>
     <table id="receipt_table">
         <tr>
             <th>No.</th>
@@ -23,5 +23,151 @@
             <th>ดำเนินการ</th>
         </tr>
     </table>
+    <template id="receipt_row">
+        <td class="no"></td>
+        <td class="receipt_code"></td>
+        <td class="receipt_date"></td>
+        <td class="receipt_grand_total"></td>
+        <td>
+            <button class="view_detail">ดูรายละเอียด</button>
+        </td>
+    </template>
+    <script type="module">
+        import {
+            getReceiptsList
+        } from '../api.js'
+
+        const table = document.querySelector("#receipt_table")
+        const search = document.querySelector("#search_by_date")
+
+        search.addEventListener("click", searchByDate)
+
+        const response = await getReceiptsList()
+
+        if (response.code != 0) {
+            alert(response.data)
+        }
+
+        const receipts = response.data
+
+        var startDate
+        var endDate
+
+        function getTable() {
+            for (const receipt of receipts) {
+                var newRow = document.createElement('tr')
+                var template = document.querySelector('#receipt_row')
+                const index = table.rows.length
+
+                var clone = template.content.cloneNode(true)
+                clone.querySelector(".no").innerText = index
+                clone.querySelector(".receipt_code").innerText = receipt.code
+                clone.querySelector(".receipt_date").innerText = receipt.date
+                clone.querySelector(".receipt_grand_total").innerText = receipt.grand_total
+                clone.querySelector(".view_detail").addEventListener("click", toViewDetailPage)
+
+                newRow.append(clone)
+                table.querySelector("tbody").appendChild(newRow)
+
+                function toViewDetailPage() {
+                    window.location.href = `/PointOfSales/receipt/${receipt.id}`
+                }
+            }
+        }
+
+        function searchByDate() {
+            clearTable()
+
+            for(const receipt of receipts) {
+                if(isInRange(receipt.date)) {
+                    var newRow = document.createElement('tr')
+                    var template = document.querySelector('#receipt_row')
+                    const index = table.rows.length
+
+                    var clone = template.content.cloneNode(true)
+                    clone.querySelector(".no").innerText = index
+                    clone.querySelector(".receipt_code").innerText = receipt.code
+                    clone.querySelector(".receipt_date").innerText = receipt.date
+                    clone.querySelector(".receipt_grand_total").innerText = receipt.grand_total
+                    clone.querySelector(".view_detail").addEventListener("click", toViewDetailPage)
+
+                    newRow.append(clone)
+                    table.querySelector("tbody").appendChild(newRow)
+
+                    function toViewDetailPage() {
+                        window.location.href = `/PointOfSales/receipt/${receipt.id}`
+                    }
+                }
+            }           
+        }
+
+        function clearTable() {
+            var rowLength = table.rows.length
+            for (var i = rowLength - 1; i > 0; i--) {
+                table.deleteRow(i)
+            }
+        }
+
+        function isInRange(dataDateString) {
+            let startDateString = document.querySelector("#start_date").value
+            let endDateString = document.querySelector("#end_date").value
+
+            let dataDate = ddMMyyyyToDate(dataDateString)
+
+            if (startDateString == "") {
+                startDate = new Date(-8640000000000000)
+            }
+            else {
+                startDate = new Date(yyyyMMddToDate(startDateString))
+            }
+
+            if (endDateString == "") {
+                endDate = new Date(8640000000000000)
+            }
+            else {
+                endDate = new Date(yyyyMMddToDate(endDateString))
+            }
+
+            if (dataDate.getTime() >= startDate.getTime() && dataDate.getTime() <= endDate.getTime()) {
+                return true
+            }
+            else {
+                return false
+            }
+        }   
+
+        function ddMMyyyyToDate(dateString) {
+            let split = dateString.split("/")
+            let dateObject = new Date(+split[2], split[1] - 1, +split[0])
+            
+            return dateObject
+        }
+        
+        function yyyyMMddToDate(dateString) {
+            let split = dateString.split("-")
+            let dateObject = new Date(+split[0], split[1] - 1, +split[2])
+
+            return dateObject
+        }
+
+        function formatDate(date) {
+            var dd = date.getDate()
+            var mm = date.getMonth() + 1
+            var yyyy = date.getFullYear()
+
+            if (dd < 10) {
+                dd = "0" + dd
+            }
+
+            if (mm < 10) {
+                mm = "0" + mm
+            }
+
+            formattedDate = dd + "/" + mm + "/" + yyyy
+            return formattedDate
+        }
+
+        getTable()
+    </script>
 </body>
 </html>

@@ -34,5 +34,9 @@ app.get("/PointOfSales/pos", function(req, res) {
     res.sendFile(path.join(__dirname + "/files" + "/pos.html"))
 })
 
+app.get("/PointOfSales/receipt/:receiptId", function(req, res) {
+    res.sendFile(path.join(__dirname + "/files" + "/receiptDetail.html"))
+})
+
 
 app.listen(3000, () => console.log("Server started"))

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PointOfSales</title>
+</head>
+<body>
+    <a href="/PointOfSales/receipt">กลับ</a><br>
+    <label>เลขที่เอกสาร</label><br>
+    <input id="receipt_code" disabled><br>
+    <label>วันที่</label><br>
+    <input id="receipt_date" disabled><br>
+    <table id="order_table">
+        <thead>
+            <tr>
+                <th>No.</th>
+                <th>รหัสสินค้า</th>
+                <th>ชื่อสินค้า</th>
+                <th>หน่วย</th>
+                <th>จำนวน</th>
+                <th>ราคา</th>
+                <th>ส่วนลด (%)</th>
+                <th>ส่วนลด (บาท)</th>
+                <th>รวมเงิน</th>
+            </tr>
+        </thead>
+        <tbody>
+            
+        </tbody>
+    </table>
+    <template id="order_row">
+        <td class="no"></td>
+        <td class="item_code"></td>
+        <td class="item_name"></td>
+        <td class="item_unit"></td>
+        <td class="item_amount"></td>
+        <td class="item_price"></td>
+        <td class="discount_percent"></td>
+        <td class="discount_amount"></td>
+        <td class="price_total"></td>
+    </template>
+
+    <label>ยอดรวมสินค้าก่อนส่วนลด</label>
+    <input id="total_price_no_discount" disabled type="number"><br>
+    <label>ยอดรวมส่วนลดสินค้า</label>
+    <input id="total_discount" disabled type="number"><br>
+    <label>Subtotal</label>
+    <input id="subtotal" disabled type="number"><br>
+    <label>ส่วนลดการค้า</label>
+    <input id="trade_discount" disabled type="number"><br>
+    <label>Grand total</label>
+    <input id="grand_total" disabled type="number"><br>
+
+    <script type="module">
+        import {
+            getOneReceipt
+        } from '../../api.js'
+
+        const table = document.querySelector("#order_table")
+
+        async function getTable() {
+            const currentUrl = window.location.href
+            const splittedUrl = currentUrl.split("/")
+            const id = splittedUrl[splittedUrl.length - 1]
+            
+            const response = await getOneReceipt(+id)
+
+            if (response.code != 0) {
+                alert(response.data)
+                return
+            }
+
+            const receipt = response.data
+
+            document.querySelector("#receipt_code").value = receipt.code
+            document.querySelector("#receipt_date").value = receipt.date
+            document.querySelector("#total_price_no_discount").value = receipt.total_price
+            document.querySelector("#total_discount").value = receipt.total_discount
+            document.querySelector("#subtotal").value = receipt.subtotal
+            document.querySelector("#trade_discount").value = receipt.trade_discount
+            document.querySelector("#grand_total").value = receipt.grand_total
+
+            for (const order of receipt.orders) {
+                var newRow = document.createElement('tr')
+                var template = document.querySelector('#order_row')
+                const index = table.rows.length
+
+                const clone = template.content.cloneNode(true)
+                clone.querySelector(".no").innerText = index
+                clone.querySelector(".item_code").innerText = order.item_code
+                clone.querySelector(".item_name").innerText = order.item_name
+                clone.querySelector(".item_unit").innerText = order.item_unit
+                clone.querySelector(".item_amount").innerText = order.item_amount
+                clone.querySelector(".item_price").innerText = order.item_price
+                clone.querySelector(".discount_percent").innerText = order.item_discount_percent
+                clone.querySelector(".discount_amount").innerText = order.item_discount
+                clone.querySelector(".price_total").innerText = order.item_total_price
+
+                newRow.append(clone)
+                table.querySelector("tbody").appendChild(newRow)
+            }
+        }
+
+        getTable()
+    </script>
+</body>
+</html>
